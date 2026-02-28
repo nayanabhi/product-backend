@@ -22,7 +22,7 @@ function getProducts({ search, category, page = 1, limit = 12 }) {
 
   if (search) {
     where.push("LOWER(title) LIKE @search ESCAPE '\\'");
-    params.search = `${escapeLike(search.toLowerCase())}%`;
+    params.search = `%${escapeLike(search.toLowerCase())}%`;
   }
 
   const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
