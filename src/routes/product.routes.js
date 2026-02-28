@@ -1,0 +1,13 @@
+const express = require("express");
+const { fetchProducts } = require("../controllers/product.controller");
+const validateQuery = require("../middleware/validateQuery");
+
+const router = express.Router();
+
+router.get("/", validateQuery, fetchProducts);
+
+router.all("/", (_, res) => {
+  res.status(405).json({ message: "Method Not Allowed" });
+});
+
+module.exports = router;
