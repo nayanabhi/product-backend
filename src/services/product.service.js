@@ -22,28 +22,32 @@ function getProducts({ search, category, page = 1, limit = 12 }) {
 
   if (search) {
     where.push("LOWER(title) LIKE @search ESCAPE '\\'");
-    params.search = `%${escapeLike(search.toLowerCase())}%`;
+    params.search = `${escapeLike(search.toLowerCase())}%`;
   }
 
   const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
-  const totalStmt = db.prepare(`
-    SELECT COUNT(*) as count FROM products ${whereClause}
-  `);
 
-  const total = totalStmt.get(params).count;
 
   const stmt = db.prepare(`
-    SELECT * FROM products
+    SELECT
+      id, title, price, category, image, created_at,
+      COUNT(*) OVER() AS total_count
+    FROM products
     ${whereClause}
+    ORDER BY id
     LIMIT @limit OFFSET @offset
   `);
 
-  const data = stmt.all({
+  const rows = stmt.all({
     ...params,
-    limit,
-    offset: (page - 1) * limit
+    limit:  limit,
+    offset: (page - 1) * limit,
   });
+
+  const total = rows[0]?.total_count ?? 0;
+
+  const data = rows.map(({ total_count, ...rest }) => rest);
 
   const pageNum = Number(page);
   const limitNum = Number(limit);
@@ -61,4 +65,22 @@ function getProducts({ search, category, page = 1, limit = 12 }) {
   return response;
 }
 
-module.exports = { getProducts };
+function getCategories() {
+  const cacheKey = "categories:all";
+  if (cache.has(cacheKey)) return cache.get(cacheKey);
+
+  const stmt = db.prepare(`
+    SELECT
+      category,
+      COUNT(*) AS count
+    FROM products
+    GROUP BY category
+    ORDER BY category ASC
+  `);
+
+  const categories = stmt.all();
+  cache.set(cacheKey, categories, 300);
+  return categories;
+}
+
+module.exports = { getProducts, getCategories };

@@ -21,8 +21,9 @@ db.exec(`
     updated_at TEXT DEFAULT (datetime('now'))
   );
 
-    CREATE INDEX IF NOT EXISTS idx_category ON products(category);
-    CREATE INDEX IF NOT EXISTS idx_title ON products(title);
+  CREATE INDEX IF NOT EXISTS idx_category ON products(category);
+  CREATE INDEX IF NOT EXISTS idx_title ON products(LOWER(title));
+  CREATE INDEX IF NOT EXISTS idx_category_title ON products(category, LOWER(title));
 `);
 
 const insert = db.prepare(`
